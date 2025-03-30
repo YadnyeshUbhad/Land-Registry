@@ -4,141 +4,62 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Land Registry</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.3/dist/web3.min.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+            text-align: center;
+            margin: 20px;
         }
-
         .container {
-            background-color: white;
+            background: white;
             padding: 20px;
             border-radius: 8px;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            width: 400px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
         }
-
-        h1 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        h3 {
-            margin-top: 15px;
-        }
-
-        input[type="text"],
-        input[type="number"] {
+        input, button {
             width: 100%;
-            padding: 8px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-        }
-
-        button {
-            background-color: #28a745;
-            color: white;
-            border: none;
             padding: 10px;
-            width: 100%;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #218838;
-        }
-
-        #landDetailOutput {
-            margin-top: 10px;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 4px;
-        }
-
-        #error {
-            color: red;
-        }
-
-        #success {
-            color: green;
+            margin: 10px 0;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Land Registry</h1>
+        <button onclick="connectMetaMask()">Connect MetaMask</button>
+        <p>Connected Account: <span id="account-address">Not Connected</span></p>
 
-        <div id="account-info">
-            <h3>Account: <span id="account-address"></span></h3>
-        </div>
+        <h3>Register Land</h3>
+        <input type="number" id="landId" placeholder="Land ID">
+        <input type="text" id="ownerName" placeholder="Owner Name">
+        <button onclick="registerLand()">Register</button>
 
-        <div id="land-registration">
-            <h3>Register Land</h3>
-            <input type="number" id="landId" placeholder="Land ID">
-            <input type="text" id="landOwnerName" placeholder="Owner Name">
-            <input type="text" id="landLocation" placeholder="Location">
-            <input type="number" id="landArea" placeholder="Area">
-            <input type="text" id="landGeoTag" placeholder="Geo Tag">
-            <input type="text" id="landTokenURI" placeholder="Token URI">
-            <button id="registerLandBtn">Register Land</button>
-        </div>
+        <h3>Get Land Details</h3>
+        <input type="number" id="landIdDetails" placeholder="Land ID">
+        <button onclick="getLandDetails()">Fetch Details</button>
+        <p id="landDetailOutput"></p>
 
-        <div id="land-sale">
-            <h3>List Land for Sale</h3>
-            <input type="number" id="landIdForSale" placeholder="Land ID">
-            <input type="number" id="landPrice" placeholder="Price">
-            <button id="listLandBtn">List Land for Sale</button>
-        </div>
+        <h3>Raise Dispute</h3>
+        <input type="number" id="disputeLandId" placeholder="Land ID">
+        <input type="text" id="disputeReason" placeholder="Reason">
+        <button onclick="raiseDispute()">Raise Dispute</button>
 
-        <div id="land-details">
-            <h3>Land Details</h3>
-            <input type="number" id="landIdDetails" placeholder="Land ID">
-            <button id="getLandDetailsBtn">Get Land Details</button>
-            <div id="landDetailOutput"></div>
-        </div>
-
-        <div id="dispute-section">
-            <h3>Raise Dispute</h3>
-            <input type="number" id="landIdForDispute" placeholder="Land ID">
-            <input type="text" id="disputeReason" placeholder="Reason">
-            <button id="raiseDisputeBtn">Raise Dispute</button>
-        </div>
-
-        <div id="transfer-ownership">
-            <h3>Transfer Ownership</h3>
-            <input type="number" id="landIdTransfer" placeholder="Land ID">
-            <input type="text" id="newOwnerAddress" placeholder="New Owner Address">
-            <button id="transferOwnershipBtn">Transfer Ownership</button>
-        </div>
-
-        <div id="statusMessages">
-            <div id="success"></div>
-            <div id="error"></div>
-        </div>
+        <h3>Transfer Ownership</h3>
+        <input type="number" id="transferLandId" placeholder="Land ID">
+        <input type="text" id="newOwner" placeholder="New Owner Address">
+        <button onclick="transferOwnership()">Transfer</button>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/web3@1.7.3/dist/web3.min.js"></script>
     <script>
-        window.addEventListener("load", async () => {
-            if (typeof Web3 !== "undefined") {
-                // Connect to Ganache
-                const web3 = new Web3("http://127.0.0.1:7545");  // Ganache's default RPC endpoint
-                const accounts = await web3.eth.getAccounts();
-                const accountAddress = accounts[0];
-                document.getElementById("account-address").innerText = accountAddress;
-
-                const contractAddress = "0x64d2a4fFEa09bf775Fd45896D719fa2F745fA8d3";  // Replace with your contract's deployed address
-                const senderaddress = "0x3c705AbbEa9A13A990Da156cC2f7e13004eeE45F";
-                const abi = [
-                    // ABI generated from your contract, use Remix or Truffle to get this
-                    {
+        let web3;
+        let contract;
+        const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+        const abi = [ /* ABI GOES HERE */ 
+        {
       "inputs": [],
       "stateMutability": "nonpayable",
       "type": "constructor"
@@ -191,6 +112,25 @@
         }
       ],
       "name": "ApprovalForAll",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_fromTokenId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_toTokenId",
+          "type": "uint256"
+        }
+      ],
+      "name": "BatchMetadataUpdate",
       "type": "event"
     },
     {
@@ -347,15 +287,22 @@
       "anonymous": false,
       "inputs": [
         {
-          "indexed": true,
+          "indexed": false,
           "internalType": "uint256",
-          "name": "landId",
+          "name": "_tokenId",
           "type": "uint256"
-        },
+        }
+      ],
+      "name": "MetadataUpdate",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
         {
           "indexed": true,
           "internalType": "address",
-          "name": "oldOwner",
+          "name": "previousOwner",
           "type": "address"
         },
         {
@@ -373,8 +320,14 @@
       "inputs": [
         {
           "indexed": true,
+          "internalType": "uint256",
+          "name": "landId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
           "internalType": "address",
-          "name": "previousOwner",
+          "name": "oldOwner",
           "type": "address"
         },
         {
@@ -472,8 +425,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -502,8 +454,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -522,8 +473,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -547,8 +497,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -617,8 +566,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -647,8 +595,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
@@ -661,8 +608,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
@@ -675,8 +621,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -695,8 +640,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -720,8 +664,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
@@ -772,7 +715,7 @@
         },
         {
           "internalType": "bytes",
-          "name": "_data",
+          "name": "data",
           "type": "bytes"
         }
       ],
@@ -816,8 +759,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [],
@@ -830,8 +772,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -850,8 +791,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -898,16 +838,10 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "_landId",
-          "type": "uint256"
-        },
         {
           "internalType": "string",
           "name": "_ownerName",
@@ -1058,8 +992,7 @@
       "name": "buyLand",
       "outputs": [],
       "stateMutability": "payable",
-      "type": "function",
-      "payable": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -1072,8 +1005,7 @@
       "name": "placeBid",
       "outputs": [],
       "stateMutability": "payable",
-      "type": "function",
-      "payable": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -1149,8 +1081,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -1169,8 +1100,7 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     },
     {
       "inputs": [
@@ -1189,134 +1119,52 @@
         }
       ],
       "stateMutability": "view",
-      "type": "function",
-      "constant": true
+      "type": "function"
     }
   
-                ];
-                const contract = new web3.eth.Contract(abi, contractAddress);
+        ];
 
-                // Helper to clear messages
-                const clearMessages = () => {
-                    document.getElementById("success").innerText = "";
-                    document.getElementById("error").innerText = "";
-                }
-
-                // Register land
-                document.getElementById("registerLandBtn").addEventListener("click", async () => {
-                    clearMessages();
-
-                    const landId = document.getElementById("landId").value;
-                    const ownerName = document.getElementById("landOwnerName").value;
-                    const location = document.getElementById("landLocation").value;
-                    const area = document.getElementById("landArea").value;
-                    const geoTag = document.getElementById("landGeoTag").value;
-                    const tokenURI = document.getElementById("landTokenURI").value;
-
-                    if (!landId || !ownerName || !location || !area || !geoTag || !tokenURI) {
-                        document.getElementById("error").innerText = "All fields are required.";
-                        return;
-                    }
-
-                    try {
-                        await contract.methods.registerLand(landId, ownerName, location, area, geoTag, tokenURI)
-                            .send({ from: accountAddress });
-                        document.getElementById("success").innerText = "Land registered successfully!";
-                    } catch (err) {
-                        document.getElementById("error").innerText = "Error registering land: " + err.message;
-                    }
-                });
-
-                // List land for sale
-                document.getElementById("listLandBtn").addEventListener("click", async () => {
-                    clearMessages();
-
-                    const landId = document.getElementById("landIdForSale").value;
-                    const price = document.getElementById("landPrice").value;
-
-                    if (!landId || !price) {
-                        document.getElementById("error").innerText = "Land ID and Price are required.";
-                        return;
-                    }
-
-                    try {
-                        await contract.methods.listLandForSale(landId, price)
-                            .send({ from: accountAddress });
-                        document.getElementById("success").innerText = "Land listed for sale successfully!";
-                    } catch (err) {
-                        document.getElementById("error").innerText = "Error listing land for sale: " + err.message;
-                    }
-                });
-
-                // Get land details
-                document.getElementById("getLandDetailsBtn").addEventListener("click", async () => {
-                    clearMessages();
-
-                    const landId = document.getElementById("landIdDetails").value;
-
-                    if (!landId) {
-                        document.getElementById("error").innerText = "Land ID is required.";
-                        return;
-                    }
-
-                    try {
-                        const land = await contract.methods.getLandDetails(landId).call();
-                        document.getElementById("landDetailOutput").innerHTML = `
-                            <strong>Owner:</strong> ${land.ownerName}<br>
-                            <strong>Location:</strong> ${land.location}<br>
-                            <strong>Area:</strong> ${land.area} sq.m.<br>
-                            <strong>Price:</strong> ${land.price}<br>
-                        `;
-                    } catch (err) {
-                        document.getElementById("error").innerText = "Error fetching land details: " + err.message;
-                    }
-                });
-
-                // Raise dispute
-                document.getElementById("raiseDisputeBtn").addEventListener("click", async () => {
-                    clearMessages();
-
-                    const landId = document.getElementById("landIdForDispute").value;
-                    const reason = document.getElementById("disputeReason").value;
-
-                    if (!landId || !reason) {
-                        document.getElementById("error").innerText = "Land ID and Reason are required.";
-                        return;
-                    }
-
-                    try {
-                        await contract.methods.raiseDispute(landId, reason)
-                            .send({ from: accountAddress });
-                        document.getElementById("success").innerText = "Dispute raised successfully!";
-                    } catch (err) {
-                        document.getElementById("error").innerText = "Error raising dispute: " + err.message;
-                    }
-                });
-
-                // Transfer ownership
-                document.getElementById("transferOwnershipBtn").addEventListener("click", async () => {
-                    clearMessages();
-
-                    const landId = document.getElementById("landIdTransfer").value;
-                    const newOwnerAddress = document.getElementById("newOwnerAddress").value;
-
-                    if (!landId || !newOwnerAddress) {
-                        document.getElementById("error").innerText = "Land ID and New Owner Address are required.";
-                        return;
-                    }
-
-                    try {
-                        await contract.methods.transferOwnership(landId, newOwnerAddress)
-                            .send({ from: accountAddress });
-                        document.getElementById("success").innerText = "Ownership transferred successfully!";
-                    } catch (err) {
-                        document.getElementById("error").innerText = "Error transferring ownership: " + err.message;
-                    }
-                });
+        async function connectMetaMask() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                const accounts = await web3.eth.getAccounts();
+                document.getElementById("account-address").innerText = accounts[0];
+                contract = new web3.eth.Contract(abi, contractAddress);
             } else {
-                alert("Please install a web3 provider or ensure Ganache is running.");
+                alert("MetaMask not found!");
             }
-        });
+        }
+
+        async function registerLand() {
+            const accounts = await web3.eth.getAccounts();
+            const landId = document.getElementById("landId").value;
+            const ownerName = document.getElementById("ownerName").value;
+            await contract.methods.registerLand(landId, ownerName).send({ from: accounts[0] });
+            alert("Land Registered!");
+        }
+
+        async function getLandDetails() {
+            const landId = document.getElementById("landIdDetails").value;
+            const details = await contract.methods.getLandDetails(landId).call();
+            document.getElementById("landDetailOutput").innerText = `Owner: ${details.ownerName}`;
+        }
+
+        async function raiseDispute() {
+            const accounts = await web3.eth.getAccounts();
+            const landId = document.getElementById("disputeLandId").value;
+            const reason = document.getElementById("disputeReason").value;
+            await contract.methods.raiseDispute(landId, reason).send({ from: accounts[0] });
+            alert("Dispute Raised!");
+        }
+
+        async function transferOwnership() {
+            const accounts = await web3.eth.getAccounts();
+            const landId = document.getElementById("transferLandId").value;
+            const newOwner = document.getElementById("newOwner").value;
+            await contract.methods.transferOwnership(landId, newOwner).send({ from: accounts[0] });
+            alert("Ownership Transferred!");
+        }
     </script>
 </body>
 </html>
