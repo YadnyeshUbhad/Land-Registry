@@ -167,6 +167,10 @@ transferOwnership(landId, newOwnerAddress)	Transfers land ownership to a new own
 
 🔹 Implement Smart Contract Events for real-time notifications
 
+Author
+Sahil Sanap
+Yadnyesh Ubhad
+
 
 🏆 Contributing
 
